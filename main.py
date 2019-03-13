@@ -1,68 +1,46 @@
 
-import time
-import os
+
+from bs4 import BeautifulSoup
+import json
+import requests
 import spotipy
 import spotipy.util as util
 
-import requests
-from bs4 import BeautifulSoup
 
-def find_class(input_soup, requested_class):
-    return input_soup.find('div', class_=requested_class).get_text().strip()
+
+
+def find_css_class(input_soup, requested_class):
+    output_soup = input_soup.find('div', class_=requested_class)
+    if (output_soup):
+        return output_soup.get_text().strip()
+    else:
+        return requested_class + " unavailable"
 
 
 soup = BeautifulSoup(requests.get("http://smithstix.com/music").content, "html.parser")
 
-# print(soup.prettify())
-#
-# print("\n")
-# print("\n")
-print("\n")
-
 listings = soup.find_all('div', {"class" : "event-row"})
 
 for listing in listings:
+    title = find_css_class(listing, "event-title")
+    day = find_css_class(listing, "day-container")
+    month = find_css_class(listing, "month-container")
+    year = find_css_class(listing, "year-container")
+    time = find_css_class(listing, "time-container")
+    venue = find_css_class(listing, "event-venue")
+    price = find_css_class(listing, "price")
 
-    title = find_class(listing, "event-title")
-    day = find_class(listing, "day-container")
-    month = find_class(listing, "month-container")
-    year = find_class(listing, "year-container")
-    time = find_class(listing, "time-container")
-
-    print(title)
-    print(day)
-    print(month)
-    print(year)
-    print(time)
-
-
+    # print(title)
+    # print(day)
+    # print(month)
+    # print(year)
+    # print(time)
+    # print(price)
+    # print(venue)
+    #
     # print(listing.prettify())
-    print("\n")
+    # print("\n")
 
-
-
-
-
-# os.system("curl http://smithstix.com/music")
-
-# driver = webdriver.Chrome()
-# driver.get("http://smithstix.com/music")
-#
-# time.sleep(2)
-#
-# concerts = driver.find_elements_by_class_name("event-row")
-#
-# # concerts[0]
-#
-# for concert in concerts:
-#     print(concert.find_element_by_class_name("date-outer").text)
-#     # print(concert)
-#
-# print(len(concerts))
-#
-#
-# time.sleep(2)
-# driver.quit()
 
 # Cool Libraries
 # Beautiful Soup
@@ -70,14 +48,18 @@ for listing in listings:
 # SMTP python
 # Import SSL (Secure Sockets Layer)
 
-# TODO Import from file for id and secret
 
+with open("credentials.txt") as file:
+    credentials = json.load(file)
 
+client_id = credentials["client_id"]
+client_secret = credentials["client_secret"]
+redirect_uri = credentials["redirect_uri"]
 scope = "user-library-read"
 username = "me"
 
-# token = util.prompt_for_user_token(username, scope, client_id, client_secret, redirect_uri)
-#
+token = util.prompt_for_user_token(username, scope, client_id, client_secret, redirect_uri)
+
 # if token:
 #     sp = spotipy.Spotify(token)
 #     results = sp.current_user_saved_tracks()

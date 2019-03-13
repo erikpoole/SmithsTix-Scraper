@@ -24,14 +24,11 @@
 *venv
 *idea
 *__init__.py
+*.cache-me
+*__pycache__/
 
-# PMBC
-*pbmc
-*PBMCompressor
-*Tester
-
-#LLVM
-*coverage*
-
-#Fuzzer
-*fuzz/
+# Scraper
+*scraper
+*credentials.txt
+*docx
+*pdf
