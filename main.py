@@ -7,16 +7,20 @@
 from bs4 import BeautifulSoup
 import json
 import requests
+import smtplib
 import spotipy
 import spotipy.util as util
+import unicodedata
 
-#***************************************************************************
-#***************************************************************************
+
+# ***************************************************************************
+# ***************************************************************************
 
 def add_artists(input_songs, artists_list):
     for song in input_songs['items']:
         _artist = song['track']['artists'][0]['name']
         artists_list.add(_artist)
+
 
 def find_css_class(input_soup, requested_class):
     _output_soup = input_soup.find('div', class_=requested_class)
@@ -25,8 +29,10 @@ def find_css_class(input_soup, requested_class):
     else:
         return requested_class + " unavailable"
 
-#***************************************************************************
-#***************************************************************************
+
+# ***************************************************************************
+# ***************************************************************************
+
 
 with open("credentials.txt") as file:
     credentials = json.load(file)
@@ -34,8 +40,15 @@ with open("credentials.txt") as file:
 client_id = credentials["client_id"]
 client_secret = credentials["client_secret"]
 redirect_uri = credentials["redirect_uri"]
+gmail_account = credentials["gmail_account"]
+gmail_password = credentials["gmail_password"]
 scope = "user-library-read"
 username = "me"
+
+
+# ***************************************************************************
+# ***************************************************************************
+
 
 token = util.prompt_for_user_token(username, scope, client_id, client_secret, redirect_uri)
 
@@ -68,12 +81,15 @@ if token:
 else:
     print("Can't get token for", username)
 
-#***************************************************************************
-#***************************************************************************
+
+# ***************************************************************************
+# ***************************************************************************
+
 
 soup = BeautifulSoup(requests.get("http://smithstix.com/music").content, "html.parser")
 
 listings = soup.find_all('div', {"class": "event-row"})
+concert_strings = []
 
 for listing in listings:
     title = find_css_class(listing, "event-title")
@@ -87,15 +103,34 @@ for listing in listings:
             venue = find_css_class(listing, "event-venue")
             price = find_css_class(listing, "price")
 
-            print(title)
-            print(month + " " + day + " " + year + " at " + time)
-            print(venue)
-            print(price)
-            print()
+            concert_strings.append(title + "\n" + month + " " + day + " " + year + " at " + time + "\n" + venue + "\n" + price + "\n\n")
+
+
+# ***************************************************************************
+# ***************************************************************************
 
 
 
+# output = unicodedata.normalize('NFD', my_unicode).encode('ascii', 'ignore')
 
+sender = gmail_account + "@gmail.com"
+receivers = ["Mahkumazahn@gmail.com", "8014718540@vtext.com"]
+# receivers = ["8014718540@vtext.com"]
 
+message = "\r\nHello! I found some concerts you might be interested in:\n\n"
+for string in concert_strings:
+    message += string
+message = unicodedata.normalize("NFD", message).encode("ascii", "ignore")
 
+print(message)
 
+server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+server.login(gmail_account, gmail_password)
+
+try:
+    server.sendmail(sender, receivers, message)
+    print("Successfully sent email")
+except smtplib.SMTPException:
+    print("Error: unable to send email")
+
+server.quit()
