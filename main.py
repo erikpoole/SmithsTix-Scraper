@@ -1,15 +1,12 @@
-# Cool Libraries
-# Beautiful Soup
-# SQLite - CSV
-# SMTP python
-# Import SSL (Secure Sockets Layer)
-
 from bs4 import BeautifulSoup
 import json
+import os
 import requests
 import smtplib
 import spotipy
 import spotipy.util as util
+import sqlite3
+from sqlite3 import Error
 import unicodedata
 
 
@@ -45,14 +42,13 @@ gmail_password = credentials["gmail_password"]
 scope = "user-library-read"
 username = "me"
 
-
 # ***************************************************************************
 # ***************************************************************************
 
-
-token = util.prompt_for_user_token(username, scope, client_id, client_secret, redirect_uri)
 
 artists = set()
+
+token = util.prompt_for_user_token(username, scope, client_id, client_secret, redirect_uri)
 
 if token:
     sp = spotipy.Spotify(token)
@@ -81,6 +77,19 @@ if token:
 else:
     print("Can't get token for", username)
 
+# ***************************************************************************
+# ***************************************************************************
+
+
+table_name = "oldListings"
+field_name = "name"
+
+try:
+    database_path = os.getcwd() + "/database.sqlite"
+    database = sqlite3.connect(database_path)
+    database.execute("CREATE TABLE IF NOT EXISTS " + table_name + " (" + field_name + " TEXT PRIMARY KEY)")
+except Error as e:
+    print(e)
 
 # ***************************************************************************
 # ***************************************************************************
@@ -96,41 +105,45 @@ for listing in listings:
 
     for artist in artists:
         if artist in title:
-            day = find_css_class(listing, "day-container")
-            month = find_css_class(listing, "month-container")
-            year = find_css_class(listing, "year-container")
-            time = find_css_class(listing, "time-container")
-            venue = find_css_class(listing, "event-venue")
-            price = find_css_class(listing, "price")
+            query_results = database.execute(
+                "SELECT * FROM " + table_name + " WHERE " + field_name + "='" + title + "'").fetchall()
 
-            concert_strings.append(title + "\n" + month + " " + day + " " + year + " at " + time + "\n" + venue + "\n" + price + "\n\n")
+            if len(query_results) == 0:
+                day = find_css_class(listing, "day-container")
+                month = find_css_class(listing, "month-container")
+                year = find_css_class(listing, "year-container")
+                time = find_css_class(listing, "time-container")
+                venue = find_css_class(listing, "event-venue")
+                price = find_css_class(listing, "price")
 
+                concert_strings.append(
+                    title + "\n" + month + " " + day + " " + year + " at " + time + "\n" + venue + "\n" + price + "\n\n")
+
+                database.execute("INSERT INTO " + table_name + " (" + field_name + ") VALUES ('" + title + "')")
 
 # ***************************************************************************
 # ***************************************************************************
 
-
-
-# output = unicodedata.normalize('NFD', my_unicode).encode('ascii', 'ignore')
 
 sender = gmail_account + "@gmail.com"
-receivers = ["Mahkumazahn@gmail.com", "8014718540@vtext.com"]
-# receivers = ["8014718540@vtext.com"]
-
-message = "\r\nHello! I found some concerts you might be interested in:\n\n"
-for string in concert_strings:
-    message += string
-message = unicodedata.normalize("NFD", message).encode("ascii", "ignore")
-
-print(message)
+# receivers = ["Mahkumazahn@gmail.com", "8014718540@vtext.com"]
+receivers = ["8014718540@vtext.com"]
+# receivers = ["8016691177@vtext.com", "8014718540@vtext.com"]
 
 server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
 server.login(gmail_account, gmail_password)
 
-try:
-    server.sendmail(sender, receivers, message)
-    print("Successfully sent email")
-except smtplib.SMTPException:
-    print("Error: unable to send email")
+for string in concert_strings:
+    message = "\r\nHello! I found a concert for you:\n\n"
+    message += string
+    message = unicodedata.normalize("NFD", message).encode("ascii", "ignore")
 
+    try:
+        server.sendmail(sender, receivers, message)
+        print("Message Sent")
+    except smtplib.SMTPException:
+        print("Error: unable to send:\n" + message)
+
+database.commit()
+database.close()
 server.quit()
