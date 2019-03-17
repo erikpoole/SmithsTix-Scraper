@@ -30,7 +30,6 @@ def find_css_class(input_soup, requested_class):
 # ***************************************************************************
 # ***************************************************************************
 
-
 with open("credentials.txt") as file:
     credentials = json.load(file)
 
@@ -45,7 +44,7 @@ username = "me"
 # ***************************************************************************
 # ***************************************************************************
 
-
+print("Pulling song info from Spotify")
 artists = set()
 
 token = util.prompt_for_user_token(username, scope, client_id, client_secret, redirect_uri)
@@ -80,7 +79,6 @@ else:
 # ***************************************************************************
 # ***************************************************************************
 
-
 table_name = "oldListings"
 field_name = "name"
 
@@ -94,7 +92,7 @@ except Error as e:
 # ***************************************************************************
 # ***************************************************************************
 
-
+print("Scraping Smithstix")
 soup = BeautifulSoup(requests.get("http://smithstix.com/music").content, "html.parser")
 
 listings = soup.find_all('div', {"class": "event-row"})
@@ -124,16 +122,22 @@ for listing in listings:
 # ***************************************************************************
 # ***************************************************************************
 
-
 sender = gmail_account + "@gmail.com"
 # receivers = ["Mahkumazahn@gmail.com", "8014718540@vtext.com"]
-receivers = ["8014718540@vtext.com"]
-# receivers = ["8016691177@vtext.com", "8014718540@vtext.com"]
+# receivers = ["8014718540@vtext.com"]
+receivers = ["8016691177@vtext.com", "8014718540@vtext.com"]
 
 server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
 server.login(gmail_account, gmail_password)
 
+
+if len(concert_strings) == 0:
+    print("No new concerts found")
+else:
+    print("One or more concerts found!")
+
 for string in concert_strings:
+    new_concerts = True
     message = "\r\nHello! I found a concert for you:\n\n"
     message += string
     message = unicodedata.normalize("NFD", message).encode("ascii", "ignore")
@@ -143,6 +147,7 @@ for string in concert_strings:
         print("Message Sent")
     except smtplib.SMTPException:
         print("Error: unable to send:\n" + message)
+
 
 database.commit()
 database.close()
