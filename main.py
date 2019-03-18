@@ -152,6 +152,7 @@ for string in concert_strings:
         print("Error: unable to send:\n" + message)
 
 
+print("\n")
 database.commit()
 database.close()
 server.quit()
