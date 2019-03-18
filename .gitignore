@@ -33,3 +33,4 @@
 *docx
 *pdf
 *.sqlite
+*error_log.txt

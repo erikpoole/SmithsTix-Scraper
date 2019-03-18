@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import datetime
 import json
 import os
 import requests
@@ -29,6 +30,8 @@ def find_css_class(input_soup, requested_class):
 
 # ***************************************************************************
 # ***************************************************************************
+
+print(str(datetime.datetime.now()))
 
 with open("credentials.txt") as file:
     credentials = json.load(file)
