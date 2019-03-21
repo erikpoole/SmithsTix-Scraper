@@ -33,6 +33,12 @@ def find_css_class(input_soup, requested_class):
 
 print(str(datetime.datetime.now()))
 
+try:
+    soup = BeautifulSoup(requests.get("http://smithstix.com/music").content, "html.parser")
+except requests.ConnectionError:
+    print("No internet connection - closing...")
+    exit()
+
 with open("credentials.txt") as file:
     credentials = json.load(file)
 
@@ -96,7 +102,6 @@ except Error as e:
 # ***************************************************************************
 
 print("Scraping Smithstix")
-soup = BeautifulSoup(requests.get("http://smithstix.com/music").content, "html.parser")
 
 listings = soup.find_all('div', {"class": "event-row"})
 concert_strings = []
@@ -152,7 +157,6 @@ for string in concert_strings:
         print("Error: unable to send:\n" + message)
 
 
-print("\n")
 database.commit()
 database.close()
 server.quit()
